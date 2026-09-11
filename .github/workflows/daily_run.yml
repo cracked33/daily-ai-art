@@ -1,10 +1,10 @@
-name: Daily AI Image Generator
+name: Frequent AI Image Generator
 
 on:
   schedule:
-    # This runs every single day at 9:00 AM UTC (Change 9 to whatever UTC hour you want)
-    - cron: '0 9 * * *'
-  workflow_dispatch: # This adds a manual "Play" button so you can test it anytime
+    # This CRON expression instructs GitHub to run this script exactly EVERY 2 HOURS
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Allows you to manually trigger it whenever you want a bonus image
 
 jobs:
   build:
@@ -29,5 +29,5 @@ jobs:
         git config --global user.name 'GitHub Action'
         git config --global user.email 'action@github.com'
         git add generated_images/*
-        git commit -m "Automated daily image upload" || exit 0
+        git commit -m "Automated hourly/frequent image upload" || exit 0
         git push
