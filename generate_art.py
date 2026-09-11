@@ -111,6 +111,13 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1536,
     Requests an image for the given prompt and returns the raw image bytes.
     Retries on transient failures (the free endpoint occasionally times out
     under load, especially the first request after it's been idle).
+
+    If a POLLINATIONS_TOKEN environment variable is set (populated from the
+    POLLINATIONS_TOKEN GitHub secret), it's sent as a Bearer token. This is a
+    token you generate yourself for free at https://auth.pollinations.ai —
+    it unlocks the registered "Seed" tier, which removes the watermark and
+    raises the rate limit. Nothing happens differently if it's not set; the
+    script just falls back to the anonymous tier (watermarked, slower).
     """
     # urllib.parse.quote() safely encodes spaces, commas, punctuation, etc.
     # This is what prevents the "LocationParseError" / malformed-URL issue —
@@ -122,11 +129,19 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1536,
         "width": width,
         "height": height,
         "model": "flux",     # free, high-quality model tier on Pollinations
-        "nologo": "true",    # Pollinations' own free flag to omit its logo
+        "nologo": "true",    # honored automatically once authenticated
         "seed": seed,
     }
     query_string = urllib.parse.urlencode(params)
     url = f"{POLLINATIONS_BASE}{encoded_prompt}?{query_string}"
+
+    headers = {"User-Agent": "Mozilla/5.0 (automated-art-bot)"}
+    token = os.environ.get("POLLINATIONS_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+        print("Using registered Pollinations token (watermark-free tier).")
+    else:
+        print("No POLLINATIONS_TOKEN set — using anonymous tier (watermarked).")
 
     last_error = None
     for attempt in range(1, max_retries + 1):
@@ -135,7 +150,7 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1536,
             response = requests.get(
                 url,
                 timeout=timeout,
-                headers={"User-Agent": "Mozilla/5.0 (automated-art-bot)"},
+                headers=headers,
             )
             response.raise_for_status()
             content_type = response.headers.get("Content-Type", "")
