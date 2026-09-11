@@ -36,31 +36,29 @@ land = random.choice(landscapes)
 prompt = f"Stunning modern Chinese manhua web novel cover style illustration, digital fantasy art, highly detailed. A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, dramatic cinematic studio lighting, crisp focus, vibrant colors, masterpiece, 8k resolution."
 print(f"Today's Prompt: {prompt}")
 
-# 3. CLEAN POST ENDPOINT (No text variables forced into the URL path)
+# 3. BASE API LINK (Kept ultra-short to ensure URL structure never overflows)
 url = "https://pollinations.ai"
 
-# 4. Enforce parameters cleanly into a structured data payload
-payload = {
+# 4. Standard GET parameters mapping (Moves prompt out of path, into safe query args)
+payload_parameters = {
     "prompt": prompt,
     "width": 1024,
     "height": 1024,
     "model": "flux",
-    "enhance": True,
-    "nologo": True,
+    "enhance": "true",
+    "nologo": "true",
     "seed": random.randint(1, 999999)
 }
 
 # 5. Extract token from vault and structure it as a secure authentication cookie
 token = os.environ.get("POLLINATIONS_TOKEN")
-headers = {
-    "Content-Type": "application/json"
-}
+headers = {}
 if token:
     headers["Cookie"] = f"__Secure-better-auth.session_token={token}"
 
-print("Sending safe POST payload request to Pollinations API...")
-# Using requests.post prevents URL parsing or length restrictions completely
-response = requests.post(url, json=payload, headers=headers)
+print("Sending optimized safe GET request to Pollinations API...")
+# Using standard requests.get with dictionary arguments passes long text reliably
+response = requests.get(url, params=payload_parameters, headers=headers)
 
 # 6. Verify and save the high-quality output
 os.makedirs("generated_images", exist_ok=True)
