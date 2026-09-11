@@ -1,3 +1,35 @@
+name: Frequent AI Image Generator
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install required tools
+      run: pip install requests
+
+    - name: Run the image generator script
+      run: python generate_art.py
+
+    - name: Save the image back to GitHub
+      run: |
+        git config --global user.name 'GitHub Action'
+        git config --global user.email 'action@github.com'
+        git add generated_images/*
+        git commit -m "Automated browser-spoofed image upload" || exit 0
+        git push
 name: Infinite Premium AI Image Generator
 
 on:
