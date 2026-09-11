@@ -4,74 +4,67 @@ import requests
 from datetime import datetime
 from urllib.parse import quote
 
-# 1. CLEAN VARIABLES (Slightly shorter to guarantee the URL never breaks)
+# 1. EXPANDED VARIABLE POOLS
 characters = [
-    "male Chinese cultivator with a topknot bun", 
-    "female spellcaster with glowing eyes", 
-    "martial arts master with a silver beard", 
-    "cyber-ninja in sleek traditional robes"
+    "young male Chinese cultivator with a topknot bun", "mystical female spellcaster with glowing eyes", 
+    "elderly martial arts master with a silver beard", "futuristic cyber-ninja in sleek traditional robes",
+    "rogue technomancer with glowing neon tattoos", "divine Empress wielding a floating data-scroll"
 ]
 outfits = [
-    "flowing traditional Hanfu robes", 
-    "silk robes embroidered with dragons", 
-    "dark jade armor and tattered cloaks", 
-    "white spiritual gowns"
+    "flowing light-blue traditional Hanfu robes", "crimson silk robes embroidered with golden dragons", 
+    "dark jade armor and tattered stealth cloaks", "pure white spiritual gowns woven from fiber-optics"
 ]
 actions = [
-    "interacting with a holographic screen", 
-    "summoning a ring of digital runes", 
-    "meditating in front of a giant server console", 
-    "drawing a katana made of circuitry"
+    "interacting with a holographic matrix screen", "summoning a massive ring of floating digital runes", 
+    "meditating deeply in front of a giant glowing server console", "drawing a katana made of condensed hard-light circuitry"
 ]
 sci_fi = [
-    "green digital binary code", 
-    "vibrant neon cyan holograms", 
-    "pulsing purple circuit board lines", 
-    "golden holographic ancient script"
+    "cascading green digital binary code streams", "vibrant neon cyan floating display holograms", 
+    "pulsing purple circuit board lines etched in the air", "golden holographic ancient text and scriptures"
 ]
 landscapes = [
-    "a misty mountain range with pagodas", 
-    "a cave filled with glowing crystals and servers", 
-    "a bamboo forest overlapping with a cyberpunk city", 
-    "a temple floating amidst thunderclouds"
+    "a misty mountain range dotted with ancient traditional pagodas", "a hidden deep cave filled with glowing crystals and supercomputers", 
+    "a bamboo forest overlapping with a towering cyberpunk cityscape", "a high-altitude temple floating silently amidst thunderclouds"
 ]
 
-# 2. Pick one randomly
 char = random.choice(characters)
 outfit = random.choice(outfits)
 action = random.choice(actions)
 tech = random.choice(sci_fi)
 land = random.choice(landscapes)
 
-# 3. Clean Master Prompt (Puts style tags at the front)
-prompt = f"Modern Chinese manhua cover style digital art, highly detailed. A {char}, wearing {outfit}, {action} featuring {tech}, background is {land}, cinematic lighting, 8k resolution."
-print(f"Today's Prompt: {prompt}")
+# 2. Assemble Master Prompt
+prompt = f"Stunning modern Chinese manhua web novel cover style illustration, digital fantasy art, highly detailed. A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, dramatic cinematic studio lighting, crisp focus, vibrant colors, masterpiece, 8k resolution."
+print(f"Today's Generated Prompt: {prompt}")
 
-# 4. Convert text safely so commas and spaces don't break the web link
+# 3. Web-Safe Encoding (Safely wraps text variables so spaces and punctuation don't break the web request)
 safe_prompt = quote(prompt)
-seed = random.randint(1, 99999)
+seed_num = random.randint(1, 999999)
 
-# 5. Native URL Structure forcing the high-quality FLUX model and removing logo
-url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&model=flux&enhance=true&nologo=true&seed={seed}"
+# 4. OFFICIAL GEN.POLLINATIONS.AI ROUTE STRUCTURE
+url = f"https://gen.pollinations.ai/image/{safe_prompt}"
 
-# 6. THE MASK: This tricks the Pollinations server into thinking a human is clicking a link
-# on Google Chrome, bypassing the automated low-quality cloud restriction lane.
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+# 5. Connect query parameters mapping directly into standard GET fields
+payload_parameters = {
+    "width": 1024,
+    "height": 1024,
+    "model": "flux",
+    "enhance": "true",
+    "seed": seed_num
 }
 
-print("Requesting image from Pollinations...")
-response = requests.get(url, headers=headers)
+print("Connecting to official Pollinations API gateway infrastructure...")
+response = requests.get(url, params=payload_parameters)
 
-# 7. Create the folder and save the image with an exact timestamp
+# 6. Build directory and write raw image payload
 os.makedirs("generated_images", exist_ok=True)
 timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 file_path = f"generated_images/art_{timestamp_str}.jpg"
 
-# 8. Check that we got a real image, not an error page
+# 7. Verification fallback confirming data delivery
 if response.status_code == 200 and b"html" not in response.content[:100]:
     with open(file_path, "wb") as f:
         f.write(response.content)
-    print(f"Successfully saved pristine image file to: {file_path}")
+    print(f"Successfully saved premium artwork asset to: {file_path}")
 else:
     print(f"Error: API returned empty or broken data frame. Status: {response.status_code}")
