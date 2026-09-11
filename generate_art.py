@@ -98,11 +98,19 @@ def build_prompt() -> str:
 
 
 # ---------------------------------------------------------------------------
-# 3. CALL THE FREE POLLINATIONS.AI IMAGE ENDPOINT
-#    Docs: https://pollinations.ai  (no API key needed for this endpoint)
+# 3. CALL THE POLLINATIONS.AI IMAGE ENDPOINT
+#    Docs: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
+#
+#    Two endpoints exist:
+#    - image.pollinations.ai  -> the original, works anonymously (watermarked)
+#    - gen.pollinations.ai    -> the newer gateway that recognizes API keys
+#      generated at https://enter.pollinations.ai (sk_... keys)
+#    When a token is present we use gen.pollinations.ai; otherwise we fall
+#    back to the anonymous endpoint.
 # ---------------------------------------------------------------------------
 
-POLLINATIONS_BASE = "https://image.pollinations.ai/prompt/"
+ANON_BASE = "https://image.pollinations.ai/prompt/"
+AUTH_BASE = "https://gen.pollinations.ai/image/"
 
 
 def generate_image(prompt: str, width: int = 1024, height: int = 1536,
@@ -113,11 +121,12 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1536,
     under load, especially the first request after it's been idle).
 
     If a POLLINATIONS_TOKEN environment variable is set (populated from the
-    POLLINATIONS_TOKEN GitHub secret), it's sent as a Bearer token. This is a
-    token you generate yourself for free at https://auth.pollinations.ai —
-    it unlocks the registered "Seed" tier, which removes the watermark and
-    raises the rate limit. Nothing happens differently if it's not set; the
-    script just falls back to the anonymous tier (watermarked, slower).
+    POLLINATIONS_TOKEN GitHub secret), the request goes to gen.pollinations.ai
+    with the key sent both as a query parameter and as a Bearer header (the
+    two ways Pollinations documents key auth, sent together so whichever the
+    backend checks, it's covered). This unlocks the registered tier: no
+    watermark, higher rate limit. Without a token, the script falls back to
+    the original anonymous endpoint (watermarked, slower).
     """
     # urllib.parse.quote() safely encodes spaces, commas, punctuation, etc.
     # This is what prevents the "LocationParseError" / malformed-URL issue —
@@ -129,18 +138,22 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1536,
         "width": width,
         "height": height,
         "model": "flux",     # free, high-quality model tier on Pollinations
-        "nologo": "true",    # honored automatically once authenticated
+        "nologo": "true",
         "seed": seed,
     }
-    query_string = urllib.parse.urlencode(params)
-    url = f"{POLLINATIONS_BASE}{encoded_prompt}?{query_string}"
 
     headers = {"User-Agent": "Mozilla/5.0 (automated-art-bot)"}
     token = os.environ.get("POLLINATIONS_TOKEN")
+
     if token:
+        params["key"] = token
         headers["Authorization"] = f"Bearer {token}"
-        print("Using registered Pollinations token (watermark-free tier).")
+        query_string = urllib.parse.urlencode(params)
+        url = f"{AUTH_BASE}{encoded_prompt}?{query_string}"
+        print("Using registered Pollinations API key (gen.pollinations.ai, watermark-free tier).")
     else:
+        query_string = urllib.parse.urlencode(params)
+        url = f"{ANON_BASE}{encoded_prompt}?{query_string}"
         print("No POLLINATIONS_TOKEN set — using anonymous tier (watermarked).")
 
     last_error = None
@@ -167,6 +180,25 @@ def generate_image(prompt: str, width: int = 1024, height: int = 1536,
                 wait = 5 * attempt
                 print(f"  -> retrying in {wait}s...")
                 time.sleep(wait)
+
+    # If the authenticated endpoint failed every attempt, fall back once to
+    # the anonymous endpoint so the run still produces *an* image (just
+    # watermarked) rather than failing the whole workflow outright.
+    if token:
+        print("Authenticated endpoint failed all retries — falling back to anonymous endpoint.")
+        fallback_params = {k: v for k, v in params.items() if k != "key"}
+        fallback_url = f"{ANON_BASE}{encoded_prompt}?{urllib.parse.urlencode(fallback_params)}"
+        try:
+            response = requests.get(
+                fallback_url,
+                timeout=timeout,
+                headers={"User-Agent": "Mozilla/5.0 (automated-art-bot)"},
+            )
+            response.raise_for_status()
+            if "image" in response.headers.get("Content-Type", ""):
+                return response.content
+        except Exception as exc:  # noqa: BLE001
+            last_error = exc
 
     raise RuntimeError(f"Image generation failed after {max_retries} attempts: {last_error}")
 
