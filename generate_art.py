@@ -2,6 +2,7 @@ import os
 import random
 import requests
 from datetime import datetime
+from urllib.parse import quote
 
 # 1. EXPANDED MASSIVE VARIABLE POOLS
 characters = [
@@ -53,15 +54,18 @@ tech = random.choice(sci_fi)
 land = random.choice(landscapes)
 
 # 3. Assemble the Master Prompt
-prompt = f"A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, cinematic lighting, modern Chinese manhua web novel cover style, digital fantasy art, highly detailed, 8k resolution."
-print(f"Today's Generated Prompt: {prompt}")
+raw_prompt = f"A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, cinematic lighting, modern Chinese manhua web novel cover style, digital fantasy art, highly detailed, 8k resolution."
+print(f"Today's Generated Prompt: {raw_prompt}")
 
-# 4. CORRECT ENDPOINT LINK PATH
-# Keeping a generic short tag in the path ensures Pollinations yields an actual image
-base_url = "https://pollinations.ai"
+# 4. Safely clean and convert the text for the web path
+# This prevents the URL from becoming corrupted or breaking
+safe_prompt_path = quote(raw_prompt)
 
+# 5. Correctly format the URL path for the API
+url = f"https://pollinations.ai{safe_prompt_path}"
+
+# 6. Pass configuration settings as clean parameters
 payload_parameters = {
-    "prompt": prompt,      # The long prompt is passed completely safe here
     "width": 1024,
     "height": 1024,
     "model": "flux",
@@ -69,18 +73,18 @@ payload_parameters = {
     "seed": random.randint(1, 999999)
 }
 
-print("Sending optimized parameter request to Pollinations...")
-response = requests.get(base_url, params=payload_parameters)
+print(f"Requesting Image from API...")
+response = requests.get(url, params=payload_parameters)
 
-# 5. Create the folder and save the image with an exact timestamp
+# 7. Create the folder and save the image with an exact timestamp
 os.makedirs("generated_images", exist_ok=True)
 timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 file_path = f"generated_images/art_{timestamp_str}.jpg"
 
-# 6. Safety check: Verify the output content is an actual image binary, not error text
+# 8. Final verification check to make sure it's a real image binary file
 if response.status_code == 200 and b"html" not in response.content[:100]:
     with open(file_path, "wb") as f:
         f.write(response.content)
-    print(f"Successfully saved absolute image binary to: {file_path}")
+    print(f"Successfully saved image binary to: {file_path}")
 else:
-    print(f"Error: Server did not return a valid image file. Status: {response.status_code}")
+    print(f"Error: API didn't return a valid file. Code: {response.status_code}")
