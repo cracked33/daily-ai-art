@@ -2,7 +2,6 @@ import os
 import random
 import requests
 from datetime import datetime
-from urllib.parse import quote
 
 # 1. EXPANDED MASSIVE VARIABLE POOLS
 characters = [
@@ -57,17 +56,23 @@ land = random.choice(landscapes)
 prompt = f"A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, cinematic lighting, modern Chinese manhua web novel cover style, digital fantasy art, highly detailed, 8k resolution."
 print(f"Today's Generated Prompt: {prompt}")
 
-# 4. Safely encode the prompt text into a web-safe URL format
-encoded_prompt = quote(prompt)
+# 4. CLEAN ENVIRONMENT STRUCTURE (Separates prompt text from the web link path completely)
+base_url = "https://pollinations.ai"
 
-# 5. FIXED BASE DOMAIN URL STRUCTURE (Ensuring 'image.' is present)
-seed_num = random.randint(1, 999999)
-url = f"https://pollinations.ai{encoded_prompt}?width=1024&height=1024&model=flux&enhance=true&seed={seed_num}"
+payload_parameters = {
+    "prompt": prompt,
+    "width": 1024,
+    "height": 1024,
+    "model": "flux",
+    "enhance": "true",
+    "seed": random.randint(1, 999999)
+}
 
-print(f"Requesting URL: {url}")
-response = requests.get(url)
+print("Sending safe parameter request to Pollinations...")
+# Using 'params' isolates the text variables safely so the URL structure never breaks
+response = requests.get(base_url, params=payload_parameters)
 
-# 6. Create the folder and save the image with an exact timestamp
+# 5. Create the folder and save the image with an exact timestamp
 os.makedirs("generated_images", exist_ok=True)
 timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 file_path = f"generated_images/art_{timestamp_str}.jpg"
@@ -75,6 +80,6 @@ file_path = f"generated_images/art_{timestamp_str}.jpg"
 if response.status_code == 200:
     with open(file_path, "wb") as f:
         f.write(response.content)
-    print(f"Successfully saved: {file_path}")
+    print(f"Successfully saved image to: {file_path}")
 else:
-    print(f"Failed to download image. Server returned code: {response.status_code}")
+    print(f"Failed to download image. Server returned status code: {response.status_code}")
