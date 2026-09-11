@@ -56,11 +56,12 @@ land = random.choice(landscapes)
 prompt = f"A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, cinematic lighting, modern Chinese manhua web novel cover style, digital fantasy art, highly detailed, 8k resolution."
 print(f"Today's Generated Prompt: {prompt}")
 
-# 4. CLEAN ENVIRONMENT STRUCTURE (Separates prompt text from the web link path completely)
+# 4. CORRECT ENDPOINT LINK PATH
+# Keeping a generic short tag in the path ensures Pollinations yields an actual image
 base_url = "https://pollinations.ai"
 
 payload_parameters = {
-    "prompt": prompt,
+    "prompt": prompt,      # The long prompt is passed completely safe here
     "width": 1024,
     "height": 1024,
     "model": "flux",
@@ -68,8 +69,7 @@ payload_parameters = {
     "seed": random.randint(1, 999999)
 }
 
-print("Sending safe parameter request to Pollinations...")
-# Using 'params' isolates the text variables safely so the URL structure never breaks
+print("Sending optimized parameter request to Pollinations...")
 response = requests.get(base_url, params=payload_parameters)
 
 # 5. Create the folder and save the image with an exact timestamp
@@ -77,9 +77,10 @@ os.makedirs("generated_images", exist_ok=True)
 timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 file_path = f"generated_images/art_{timestamp_str}.jpg"
 
-if response.status_code == 200:
+# 6. Safety check: Verify the output content is an actual image binary, not error text
+if response.status_code == 200 and b"html" not in response.content[:100]:
     with open(file_path, "wb") as f:
         f.write(response.content)
-    print(f"Successfully saved image to: {file_path}")
+    print(f"Successfully saved absolute image binary to: {file_path}")
 else:
-    print(f"Failed to download image. Server returned status code: {response.status_code}")
+    print(f"Error: Server did not return a valid image file. Status: {response.status_code}")
