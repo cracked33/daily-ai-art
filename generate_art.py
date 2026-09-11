@@ -2,7 +2,6 @@ import os
 import random
 import requests
 from datetime import datetime
-from urllib.parse import quote
 
 # 1. EXPANDED HYPER-DETAILED ART POOLS
 characters = [
@@ -37,28 +36,31 @@ land = random.choice(landscapes)
 prompt = f"Stunning modern Chinese manhua web novel cover style illustration, digital fantasy art, highly detailed. A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, dramatic cinematic studio lighting, crisp focus, vibrant colors, masterpiece, 8k resolution."
 print(f"Today's Prompt: {prompt}")
 
-# 3. Format clean modern URL path
-safe_prompt_path = quote(prompt)
-url = f"https://pollinations.ai{safe_prompt_path}"
+# 3. CLEAN POST ENDPOINT (No text variables forced into the URL path)
+url = "https://pollinations.ai"
 
-# 4. Premium parameters demanding high quality with zero logos
-payload_parameters = {
+# 4. Enforce parameters cleanly into a structured data payload
+payload = {
+    "prompt": prompt,
     "width": 1024,
     "height": 1024,
     "model": "flux",
-    "enhance": "true",
-    "nologo": "true",
+    "enhance": True,
+    "nologo": True,
     "seed": random.randint(1, 999999)
 }
 
 # 5. Extract token from vault and structure it as a secure authentication cookie
 token = os.environ.get("POLLINATIONS_TOKEN")
-headers = {}
+headers = {
+    "Content-Type": "application/json"
+}
 if token:
     headers["Cookie"] = f"__Secure-better-auth.session_token={token}"
 
-print("Sending secure verified session request to Pollinations API...")
-response = requests.get(url, params=payload_parameters, headers=headers)
+print("Sending safe POST payload request to Pollinations API...")
+# Using requests.post prevents URL parsing or length restrictions completely
+response = requests.post(url, json=payload, headers=headers)
 
 # 6. Verify and save the high-quality output
 os.makedirs("generated_images", exist_ok=True)
