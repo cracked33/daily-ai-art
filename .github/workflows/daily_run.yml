@@ -1,32 +1,50 @@
-name: Frequent AI Image Generator
+name: Generate Xianxia-Cyberpunk Art
 
+# ----------------------------------------------------------------------------
+# Runs automatically every 2 hours, and can also be triggered manually from
+# the "Actions" tab in GitHub (workflow_dispatch) for testing.
+# ----------------------------------------------------------------------------
 on:
   schedule:
-    - cron: '0 */2 * * *'
-  workflow_dispatch:
+    - cron: "0 */2 * * *"   # every 2 hours, on the hour (UTC)
+  workflow_dispatch: {}      # lets you click "Run workflow" manually
+
+# This is the permission fix for push errors ("Permission denied to
+# github-actions[bot]"). It grants THIS workflow run permission to push
+# commits back into the repo. It does NOT require you to change any
+# repository-wide settings, but see the written instructions below for the
+# one repo setting that must also be enabled.
+permissions:
+  contents: write
 
 jobs:
-  build:
+  generate:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository code
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install required tools
-      run: pip install requests
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-    - name: Run the image generator script
-      run: python generate_art.py
+      - name: Generate image
+        run: python generate_art.py
 
-    - name: Save the image back to GitHub
-      run: |
-        git config --global user.name 'GitHub Action'
-        git config --global user.email 'action@github.com'
-        git add generated_images/*
-        git commit -m "Automated verified image upload" || exit 0
-        git push
+      - name: Commit and push new image
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "github-actions[bot]"
+          git add generated_images/
+          if git diff --cached --quiet; then
+            echo "No new image to commit."
+          else
+            git commit -m "Add generated artwork [skip ci]"
+            git push
+          fi
