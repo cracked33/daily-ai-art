@@ -57,14 +57,13 @@ land = random.choice(landscapes)
 raw_prompt = f"A {char}, wearing {outfit}, {action} featuring {tech}. Background is {land}, cinematic lighting, modern Chinese manhua web novel cover style, digital fantasy art, highly detailed, 8k resolution."
 print(f"Today's Generated Prompt: {raw_prompt}")
 
-# 4. Safely clean and convert the text for the web path
-# This prevents the URL from becoming corrupted or breaking
+# 4. Convert the prompt into a web-safe URL component
 safe_prompt_path = quote(raw_prompt)
 
-# 5. Correctly format the URL path for the API
-url = f"https://pollinations.ai{safe_prompt_path}"
+# 5. NEW OFFICIAL ENDPOINT PATTERN (/prompt/ replaces the broken legacy paths)
+url = f"https://image.pollinations.ai/prompt/{safe_prompt_path}"
 
-# 6. Pass configuration settings as clean parameters
+# 6. Set up image details cleanly
 payload_parameters = {
     "width": 1024,
     "height": 1024,
@@ -73,7 +72,7 @@ payload_parameters = {
     "seed": random.randint(1, 999999)
 }
 
-print(f"Requesting Image from API...")
+print(f"Sending request to updated Pollinations API...")
 response = requests.get(url, params=payload_parameters)
 
 # 7. Create the folder and save the image with an exact timestamp
@@ -81,10 +80,10 @@ os.makedirs("generated_images", exist_ok=True)
 timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 file_path = f"generated_images/art_{timestamp_str}.jpg"
 
-# 8. Final verification check to make sure it's a real image binary file
+# 8. Check that the server actually sent back a proper image file, not error text
 if response.status_code == 200 and b"html" not in response.content[:100]:
     with open(file_path, "wb") as f:
         f.write(response.content)
-    print(f"Successfully saved image binary to: {file_path}")
+    print(f"Successfully saved image to: {file_path}")
 else:
-    print(f"Error: API didn't return a valid file. Code: {response.status_code}")
+    print(f"Error: API endpoint failed to return a valid image file. Status: {response.status_code}")
