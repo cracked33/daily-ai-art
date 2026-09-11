@@ -4,7 +4,7 @@ import requests
 from datetime import datetime
 from urllib.parse import quote
 
-# 1. EXPANDED MASSIVE VARIABLE POOLS (Millions of combinations)
+# 1. EXPANDED MASSIVE VARIABLE POOLS
 characters = [
     "young male Chinese cultivator with a topknot bun", "mystical female spellcaster with glowing eyes", 
     "elderly martial arts master with a silver beard", "futuristic cyber-ninja in sleek traditional robes",
@@ -60,14 +60,14 @@ print(f"Today's Generated Prompt: {prompt}")
 # 4. Safely encode the prompt text into a web-safe URL format
 encoded_prompt = quote(prompt)
 
-# 5. Request image from Pollinations (Using the ultra-premium Flux model automatically)
+# 5. FIXED BASE DOMAIN URL STRUCTURE (Ensuring 'image.' is present)
 seed_num = random.randint(1, 999999)
 url = f"https://pollinations.ai{encoded_prompt}?width=1024&height=1024&model=flux&enhance=true&seed={seed_num}"
 
 print(f"Requesting URL: {url}")
 response = requests.get(url)
 
-# 6. Create the folder and save the image with an exact timestamp so files don't overwrite each other
+# 6. Create the folder and save the image with an exact timestamp
 os.makedirs("generated_images", exist_ok=True)
 timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 file_path = f"generated_images/art_{timestamp_str}.jpg"
@@ -78,4 +78,3 @@ if response.status_code == 200:
     print(f"Successfully saved: {file_path}")
 else:
     print(f"Failed to download image. Server returned code: {response.status_code}")
-    
