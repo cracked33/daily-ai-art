@@ -1,4 +1,4 @@
-name: Frequent AI Image Generator
+name: Infinite Premium AI Image Generator
 
 on:
   schedule:
@@ -18,7 +18,8 @@ jobs:
         python-version: '3.10'
 
     - name: Install required tools
-      run: pip install requests
+      # We add gradio_client to handle the Hugging Face space connection
+      run: pip install requests gradio_client
 
     - name: Run the image generator script
       run: python generate_art.py
@@ -28,5 +29,5 @@ jobs:
         git config --global user.name 'GitHub Action'
         git config --global user.email 'action@github.com'
         git add generated_images/*
-        git commit -m "Automated browser-spoofed image upload" || exit 0
+        git commit -m "Automated Flux premium image upload" || exit 0
         git push
