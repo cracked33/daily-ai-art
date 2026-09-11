@@ -28,5 +28,5 @@ jobs:
         git config --global user.name 'GitHub Action'
         git config --global user.email 'action@github.com'
         git add generated_images/*
-        git commit -m "Automated browser-spoofed image upload" || exit 0
+        git commit -m "Automated verified image upload" || exit 0
         git push
