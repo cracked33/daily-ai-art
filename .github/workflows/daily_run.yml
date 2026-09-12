@@ -36,6 +36,7 @@ jobs:
 
       - name: Generate image
         env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
           POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
         run: python generate_art.py
 
